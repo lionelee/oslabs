@@ -1,3 +1,3 @@
 # jos labs1
 
-*modified printfmt.cc, monitor.c, kdebug.c*
+*modified printfmt.cc, monitor.h/.cc, kdebug.c*
