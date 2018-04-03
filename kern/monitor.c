@@ -10,6 +10,7 @@
 #include <kern/console.h>
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
+#include <kern/pmap.h>
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 #define uint64_t unsigned long long
@@ -26,7 +27,10 @@ static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
 	{ "backtrace", "Display a listing of function call frames", mon_backtrace},
-	{ "time", "Display running time (in clocks cycles) of the command", mon_time}
+	{ "time", "Display running time (in clocks cycles) of the command", mon_time},
+	{ "showmappings", "Display the physical page mappings and corresponding permission bits", mon_showmappings},
+	{ "chperm", "Set, clear or change the permissions of any mapping", mon_chperm},
+	{ "dumpcont", "Dump the contents of a given virtual/physical address memory range", mon_dumpcont}
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -164,6 +168,135 @@ mon_time(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+uint32_t
+hex2int(char* hex) {
+	uint32_t res = 0;
+	if(hex[0]!= '0' || hex[1] != 'x')return -1;
+	char* buf = hex + 2;
+	int cnt = 0;
+	while (*buf != '\0') {
+		char c = *buf;
+		if (c >= 'a') c = c -'a' + 10;
+		else if (c >= 'A') c = c -'A' + 10;
+		else c = c - '0';
+		res = res * 16 + c ;
+		++buf;
+		++cnt;
+	}
+	if(cnt > 8) return -1;
+	return res;
+}
+
+int
+mon_showmappings(int argc, char **argv, struct Trapframe *tf)
+{
+	if(argc != 3){
+		cprintf("Usage: showmappings [begin_addr] [end_addr]\n");
+		return 0;
+	}
+	uint32_t begin_page = hex2int(argv[1]);
+	uint32_t end_page = hex2int(argv[2]);
+	cprintf("ba: %08x\t ea: %08x", begin_page, end_page);
+	if(begin_page == -1 || end_page == -1){
+		cprintf("Error: invalid virtual/linear address\n");
+		return 0;
+	}
+	cprintf("|  virtaddr  |  physaddr  | P | W | U | PWT | PCD | A | D | PS | G |\n");
+	cprintf("|------------------------------------------------------------------|\n");
+	begin_page = PGNUM(begin_page)<<PTXSHIFT;
+	end_page = PGNUM(end_page)<<PTXSHIFT;
+	while(begin_page <= end_page){
+		pte_t* pte = pgdir_walk(kern_pgdir, (void *)begin_page, 0);
+		if(pte == NULL || !(*pte & PTE_P)){
+			cprintf("| 0x%08x |                    Not Exist                        |\n", begin_page);
+			begin_page += PGSIZE;
+		}else{
+			cprintf("| 0x%08x | 0x%08x ", begin_page, PGNUM(*pte)<<PTXSHIFT);
+			cprintf("| %1d | %1d | %1d |  %1d  |  %1d  | %1d | %1d | %1d  | %1d |\n",
+							(*pte&PTE_P)?1:0, (*pte&PTE_W)?1:0, (*pte&PTE_U)?1:0, (*pte&PTE_PWT)?1:0, (*pte&PTE_PCD)?1:0,
+							(*pte&PTE_A)?1:0, (*pte&PTE_D)?1:0, (*pte&PTE_PS)?1:0, (*pte&PTE_G)?1:0);
+			if(*pte & PTE_PS) begin_page += PTSIZE;
+			else begin_page += PGSIZE;
+		}
+		cprintf("|------------------------------------------------------------------|\n");
+	}
+	return 0;
+}
+
+int
+mon_chperm(int argc, char **argv, struct Trapframe *tf)
+{
+	if(argc < 3){
+		cprintf("Usage: chperm [addr] [+/-][permission(W/U/PWT/PCD/A/D/G)]...\n");
+		return 0;
+	}
+	uint32_t addr = hex2int(argv[1]);
+	pte_t *pte = pgdir_walk(kern_pgdir, (void *)addr, 0);
+	if(pte == NULL || !(*pte & PTE_P)){
+		cprintf("Error: page of addr 0x%08x not exist\n", addr);
+		return 0;
+	}
+	for(int i = 2; i < argc; ++i){
+			if (strcmp(argv[i] + 1, "W") == 0) {
+					if(argv[i][0]=='+') *pte |= PTE_W;
+					else if(argv[i][0]=='-') *pte &= ~PTE_W;
+			} else if (strcmp(argv[i] + 1, "U") == 0) {
+					if(argv[i][0]=='+') *pte |= PTE_U;
+					else if(argv[i][0]=='-') *pte &= ~PTE_U;
+			} else if (strcmp(argv[i] + 1, "PWT") == 0) {
+					if(argv[i][0]=='+') *pte |= PTE_PWT;
+					else if(argv[i][0]=='-') *pte &= ~PTE_PWT;
+			} else if (strcmp(argv[i] + 1, "PCD") == 0) {
+					if(argv[i][0]=='+') *pte |= PTE_PCD;
+					else if(argv[i][0]=='-') *pte &= ~PTE_PCD;
+			} else if (strcmp(argv[i] + 1, "A") == 0) {
+					if(argv[i][0]=='+') *pte |= PTE_A;
+					else if(argv[i][0]=='-') *pte &= ~PTE_A;
+			} else if (strcmp(argv[i] + 1, "D") == 0) {
+					if(argv[i][0]=='+') *pte |= PTE_D;
+					else if(argv[i][0]=='-') *pte &= ~PTE_D;
+			} else if (strcmp(argv[i] + 1, "G") == 0) {
+					if(argv[i][0]=='+') *pte |= PTE_G;
+					else if(argv[i][0]=='-') *pte &= ~PTE_G;
+			}
+	}
+	return 0;
+}
+
+int
+mon_dumpcont(int argc, char **argv, struct Trapframe *tf)
+{
+	if(argc != 4){
+dcusage:
+		cprintf("Usage: dumpcont [-(v/p)] [begin_addr] [end_addr]\n");
+		return 0;
+	}
+	int type = 0;
+	if (strcmp(argv[1], "-v") == 0) {
+		type = 0;
+  }else if (strcmp(argv[1], "-p") == 0) {
+    type = 1;
+  }else goto dcusage;
+	uint32_t cur_addr = hex2int(argv[2]);
+	uint32_t end_addr = hex2int(argv[3]);
+	if(cur_addr == -1 || end_addr == -1){
+		cprintf("Error: invalid %s address\n", type?"physical":"virtual");
+		return 0;
+	}
+	uint32_t cnt = 0;
+  while(cur_addr <= end_addr){
+    if (cnt % 4 == 0) cprintf("\n0x%x:", cur_addr);
+    if (type) {
+			cprintf(" %02x", ((unsigned)(*(char*)(cur_addr + KERNBASE))) & 0xff);
+    }else {
+			cprintf(" %02x", ((unsigned)(*(char*)cur_addr)) & 0xff);
+    }
+    ++cnt;
+		++cur_addr;
+  }
+  cprintf("\n");
+  return 0;
+}
 
 /***** Kernel monitor command interpreter *****/
 
@@ -214,11 +347,8 @@ monitor(struct Trapframe *tf)
 {
 	char *buf;
 
-	/*cprintf("Welcome to the JOS kernel monitor!\n");
-	cprintf("Type 'help' for a list of commands.\n");*/
-
-	int x = 1, y = 3, z = 4;
-	cprintf("x %d, y %x, z %d\n", x, y, z);
+	cprintf("Welcome to the JOS kernel monitor!\n");
+	cprintf("Type 'help' for a list of commands.\n");
 
 	while (1) {
 		buf = readline("K> ");
