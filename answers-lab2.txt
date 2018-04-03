@@ -3,21 +3,21 @@
 1. 变量`x`的类型应该是`uintptr_t`，因为指针 `value`所指是一个虚拟地址。
 
 2. tables as followings:
-| Entry| Base Virtual Address | Points to (Logically): 		        	|
+| Entry| Base Virtual Address | Points to (Logically): 		        	      |
 |------|----------------------|-----------------------------------------|
-| 1023 | 0xFFC00000           | Page table for top 4MB of phys memory	|
-| 1022 | 0xFF800000	          | Page table for top 4~8MB phys memory	|
+| 1023 | 0xFFC00000           | Page table for top 4MB of phys memory	  |
+| 1022 | 0xFF800000	          | Page table for top 4~8MB phys memory	   |
 | .... | ..........           | ....                                    |
 | 961  | 0xF0400000           | Page table for bottom 4~8MB phys memory |
-| 960  | 0xF0000000 	      |	Page table for bottom 4MB phys memory   |
-| 959  | 0xEFC00000 	      |	kernel's page table			            |
-| 958  | 0xEF800000 	      |	kernel's stack and some invalid memory  |	
-| 957  | 0xEF400000 	      |	user's page talbe itself 		        |
-| 956  | 0xEF000000 	      |	array of struct Page			        |
-| 955  | 0xEEC00000 	      |	ENVS for user mode 			            |
-| 2~954| 0x00800000-0xEE800000| User text,data,heap,stack, etc.		    |
-| 1    | 0x00400000	          | Not Mapped				                |
-| 0    | 0x00000000	          | Not Mapped				                |
+| 960  | 0xF0000000 	         |	Page table for bottom 4MB phys memory   |
+| 959  | 0xEFC00000 	         |	kernel's page table			                  |
+| 958  | 0xEF800000 	         |	kernel's stack and some invalid memory  |	
+| 957  | 0xEF400000 	         |	user's page talbe itself 		             |
+| 956  | 0xEF000000 	         |	array of struct Page			                 |
+| 955  | 0xEEC00000 	         |	ENVS for user mode 			                  |
+| 2~954| 0x00800000-0xEE800000| User text,data,heap,stack, etc.		       |
+| 1    | 0x00400000	          | Not Mapped				                          |
+| 0    | 0x00000000	          | Not Mapped				                          |
  
 3. 用户态程序无法访问内核地址空间是因为MMU会对访存权限进行检查，只要页表项的`PTE_U`未置为1则无法被用户态访问。
 
