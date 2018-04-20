@@ -6,6 +6,11 @@
 #include <inc/x86.h>
 
 
+char gdtpd[PGSIZE];
+struct Segdesc oldent;
+struct Segdesc* entry;
+void (*gfun_ptr)(void);
+
 // Call this function with ring0 privilege
 void evil()
 {
@@ -27,6 +32,14 @@ void evil()
 	outb(0x3f8, '\n');
 }
 
+void call_fun_ptr()
+{
+	gfun_ptr();
+	*entry = oldent;
+	asm volatile("leave\n\t"
+			"lret\n\t");
+}
+
 static void
 sgdt(struct Pseudodesc* gdtd)
 {
@@ -45,10 +58,20 @@ void ring0_call(void (*fun_ptr)(void)) {
     // 7. Leave ring0 (lret instruction)
 
     // Hint : use a wrapper function to call fun_ptr. Feel free
-    //        to add any functions or global variables in this 
+    //        to add any functions or global variables in this
     //        file if necessary.
 
     // Lab3 : Your Code Here
+		struct Pseudodesc gdtd;
+		sgdt(&gdtd);
+		if(sys_map_kernel_page((void*)gdtd.pd_base, (void*)gdtpd) < 0)
+			panic("failed to map kernel page\n");
+		struct Segdesc* gdt = (struct Segdesc*)((PGNUM(gdtpd)<<PTXSHIFT) + PGOFF(gdtd.pd_base));
+		entry = gdt + (GD_UT >> 3);
+		oldent = *entry;
+		gfun_ptr = fun_ptr;
+		SETCALLGATE(*(struct Gatedesc*)entry, GD_KT, call_fun_ptr, 3);
+		asm volatile("lcall $0x18, $0");
 }
 
 void
@@ -60,4 +83,3 @@ umain(int argc, char **argv)
 	// call the evil function in ring3
 	evil();
 }
-

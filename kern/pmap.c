@@ -154,7 +154,6 @@ mem_init(void)
 	// each physical page, there is a corresponding struct Page in this
 	// array.  'npages' is the number of physical pages in memory.
 	// Your code goes here:
-	cprintf("npages: %d\n", npages);
 	int size = sizeof(struct Page) * npages;
 	pages = (struct Page*)boot_alloc(size);
 	memset(pages, 0 , size);
@@ -162,6 +161,9 @@ mem_init(void)
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
 	// LAB 3: Your code here.
+	int env_size = sizeof(struct Env) * NENV;
+	envs = (struct Env*)boot_alloc(env_size);
+	memset(envs, 0 , env_size);
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
@@ -194,6 +196,7 @@ mem_init(void)
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
 	// LAB 3: Your code here.
+	boot_map_region(kern_pgdir, UENVS, env_size, PADDR(envs), PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -338,18 +341,6 @@ page_free(struct Page *pp)
 	page_free_list = pp;
 }
 
-
-struct Page*
-chunk_alloc(int alloc_flags, size_t size)
-{
-	return NULL;
-}
-
-void
-chunk_free(struct Page *pp)
-{
-
-}
 
 //
 // Return new_n continuous pages based on the allocated old_n pages.
@@ -592,7 +583,22 @@ int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
+	uintptr_t cur_addr = (uintptr_t)va;
+	uintptr_t end_addr = (uintptr_t)va + len;
+	perm |= PTE_U | PTE_P;
 
+	while(cur_addr < end_addr){
+		if (cur_addr >= ULIM) {
+			user_mem_check_addr = cur_addr;
+			return -E_FAULT;
+		}
+		pte_t* pte = pgdir_walk (env->env_pgdir, (void*)cur_addr, 0);
+		if (pte == NULL || (*pte & perm) != perm) {
+			user_mem_check_addr = cur_addr;
+			return -E_FAULT;
+		}
+		cur_addr = ROUNDDOWN(cur_addr + PGSIZE, PGSIZE);
+	}
 	return 0;
 }
 
@@ -997,11 +1003,11 @@ check_page(void)
 static int
 check_continuous(struct Page *pp, int num_page)
 {
-	struct Page *tmp; 
+	struct Page *tmp;
 	int i;
 	for( tmp = pp, i = 0; i < num_page - 1; tmp = tmp->pp_link, i++ )
 	{
-		if(tmp == NULL) 
+		if(tmp == NULL)
 		{
 			return 0;
 		}

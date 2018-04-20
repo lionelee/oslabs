@@ -4,6 +4,7 @@
 
 #include <kern/pmap.h>
 #include <kern/trap.h>
+#include <kern/kdebug.h>
 #include <kern/console.h>
 #include <kern/monitor.h>
 #include <kern/env.h>
@@ -63,10 +64,51 @@ void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
-
+	/*extern void th_divide();
+	extern void th_debug();
+	extern void th_nmi();
+	extern void th_oflow();
+	extern void th_brkpt();
+	extern void th_illop();
+	extern void th_bound();
+	extern void th_dblflt();
+	extern void th_device();
+	extern void th_tss();
+	extern void th_segnp();
+	extern void th_stack();
+	extern void th_gpflt();
+	extern void th_pgflt();
+	extern void th_fperr();
+	extern void th_align();
+	extern void th_mchk();
+	extern void th_simderr();
 	// LAB 3: Your code here.
+	SETGATE(idt[T_DIVIDE], 1, GD_KT, th_divide, 0);
+	SETGATE(idt[T_DEBUG], 1, GD_KT, th_debug, 0);
+	SETGATE(idt[T_NMI], 1, GD_KT, th_nmi, 0);
+	SETGATE(idt[T_BRKPT], 1, GD_KT, th_brkpt, 3);
+	SETGATE(idt[T_OFLOW], 1, GD_KT, th_oflow, 0);
+	SETGATE(idt[T_BOUND], 1, GD_KT, th_bound, 0);
+	SETGATE(idt[T_ILLOP], 1, GD_KT, th_illop, 0);
+	SETGATE(idt[T_DEVICE], 1, GD_KT, th_device, 0);
+	SETGATE(idt[T_DBLFLT], 1, GD_KT, th_dblflt, 0);
+	SETGATE(idt[T_TSS], 1, GD_KT, th_tss, 0);
+	SETGATE(idt[T_SEGNP], 1, GD_KT, th_segnp, 0);
+	SETGATE(idt[T_STACK], 1, GD_KT, th_stack, 0);
+	SETGATE(idt[T_GPFLT], 1, GD_KT, th_gpflt, 0);
+	SETGATE(idt[T_PGFLT], 1, GD_KT, th_pgflt, 0);
+	SETGATE(idt[T_FPERR], 1, GD_KT, th_fperr, 0);
+	SETGATE(idt[T_ALIGN], 1, GD_KT, th_align, 0);
+	SETGATE(idt[T_MCHK], 1, GD_KT, th_mchk, 0);
+	SETGATE(idt[T_SIMDERR], 1, GD_KT, th_simderr, 0);*/
+	extern int vectors[];
+	for(int i = 0; i < 20; ++i){
+		if(i != 9 && i != 15 && i != 3)
+			SETGATE(idt[i], 1, GD_KT, vectors[i], 0);
+	}
+	SETGATE(idt[3], 1, GD_KT, vectors[3], 3);
 
-	// Per-CPU setup 
+	// Per-CPU setup
 	trap_init_percpu();
 }
 
@@ -143,7 +185,15 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-
+	switch (tf->tf_trapno) {
+		case T_PGFLT:
+      page_fault_handler(tf);
+			return;
+		case T_BRKPT: case T_DEBUG:
+			monitor(tf);
+			return;
+		default: break;
+	}
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
@@ -188,6 +238,7 @@ trap(struct Trapframe *tf)
 
 	// Return to the current environment, which should be running.
 	assert(curenv && curenv->env_status == ENV_RUNNING);
+	cprintf("return to running\n");
 	env_run(curenv);
 }
 
@@ -203,6 +254,8 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
+	if ((tf->tf_cs & 0x3) == 0)
+		panic("page fault in kernel mode");
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
@@ -213,4 +266,3 @@ page_fault_handler(struct Trapframe *tf)
 	print_trapframe(tf);
 	env_destroy(curenv);
 }
-

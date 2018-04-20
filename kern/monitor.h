@@ -19,5 +19,8 @@ int mon_time(int argc, char **argv, struct Trapframe *tf);
 int mon_showmappings(int argc, char **argv, struct Trapframe *tf);
 int mon_chperm(int argc, char **argv, struct Trapframe *tf);
 int mon_dumpcont(int argc, char **argv, struct Trapframe *tf);
+int mon_continue(int argc, char **argv, struct Trapframe *tf);
+int mon_stepinto(int argc, char **argv, struct Trapframe *tf);
+int mon_display(int argc, char **argv, struct Trapframe *tf);
 
 #endif	// !JOS_KERN_MONITOR_H

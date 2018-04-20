@@ -21,6 +21,9 @@
  * where NAME is the argument passed to TRAPHANDLER.
  */
 #define TRAPHANDLER(name, num)						\
+.data;\
+  .long name;\
+.text;\
 	.globl name;		/* define global symbol for 'name' */	\
 	.type name, @function;	/* symbol type is function */		\
 	.align 2;		/* align function definition */		\
@@ -33,6 +36,9 @@
  * format in either case.
  */
 #define TRAPHANDLER_NOEC(name, num)					\
+.data;\
+  .long name;\
+.text;\
 	.globl name;							\
 	.type name, @function;						\
 	.align 2;							\
@@ -41,12 +47,40 @@
 	pushl $(num);							\
 	jmp _alltraps
 
-.text
+/* use TRAPHANDLER_RESERVED for acting as a placeholder where the trap number
+ * is reserved, so the installation in trap.c can get the right traphandler.
+ */
+#define TRAPHANDLER_RESERVED()\
+.data;\
+  .long 0
 
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
-
+#vector table
+.data
+	.globl vectors;
+vectors:
+TRAPHANDLER_NOEC(th_divide,T_DIVIDE)
+TRAPHANDLER_NOEC(th_debug,T_DEBUG)
+TRAPHANDLER_NOEC(th_nmi,T_NMI)
+TRAPHANDLER_NOEC(th_brkpt,T_BRKPT)
+TRAPHANDLER_NOEC(th_oflow,T_OFLOW)
+TRAPHANDLER_NOEC(th_bound,T_BOUND)
+TRAPHANDLER_NOEC(th_illop,T_ILLOP)
+TRAPHANDLER_NOEC(th_device,T_DEVICE)
+TRAPHANDLER(th_dblflt,T_DBLFLT)
+TRAPHANDLER_RESERVED()
+TRAPHANDLER(th_tss,T_TSS)
+TRAPHANDLER(th_segnp,T_SEGNP)
+TRAPHANDLER(th_stack,T_STACK)
+TRAPHANDLER(th_gpflt,T_GPFLT)
+TRAPHANDLER(th_pgflt,T_PGFLT)
+TRAPHANDLER_RESERVED()
+TRAPHANDLER_NOEC(th_fperr,T_FPERR)
+TRAPHANDLER_NOEC(th_align,T_ALIGN)
+TRAPHANDLER_NOEC(th_mchk,T_MCHK)
+TRAPHANDLER_NOEC(th_simderr,T_SIMDERR)
 
 
 .globl sysenter_handler;
@@ -56,9 +90,32 @@ sysenter_handler:
 /*
  * Lab 3: Your code here for system call handling
  */
+  pushl $0 // arg5
+  pushl %edi
+  pushl %ebx
+  pushl %ecx
+  pushl %edx
+  pushl %eax
+  call syscall
+  movl %ebp, %ecx
+  movl %esi, %edx
+  sysexit
 
 
 /*
  * Lab 3: Your code here for _alltraps
  */
-
+.globl _alltraps;
+.type _alltraps, @function;
+.align 2;
+_alltraps:
+  pushw $0  /*tf_padding2*/
+  pushw %ds
+  pushw $0  /*tf_padding1*/
+  pushw %es
+  pushal
+  movw $GD_KD, %ax
+  movw %ax, %ds
+  movw %ax, %es
+  pushl %esp
+  call trap

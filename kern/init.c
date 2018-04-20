@@ -2,22 +2,16 @@
 
 #include <inc/stdio.h>
 #include <inc/string.h>
+#include <inc/x86.h>
 #include <inc/assert.h>
 
 #include <kern/monitor.h>
 #include <kern/console.h>
+#include <kern/pmap.h>
+#include <kern/kclock.h>
+#include <kern/env.h>
+#include <kern/trap.h>
 
-// Test the stack backtrace function (lab 1 only)
-void
-test_backtrace(int x)
-{
-	cprintf("entering test_backtrace %d\n", x);
-	if (x > 0)
-		test_backtrace(x-1);
-	else
-		mon_backtrace(0, 0, 0);
-	cprintf("leaving test_backtrace %d\n", x);
-}
 
 void
 i386_init(void)
@@ -40,12 +34,29 @@ i386_init(void)
 	cprintf("show me the sign: %+d, %+d\n", 1024, -1024);
 
 
-	// Test the stack backtrace function (lab 1 only)
-	test_backtrace(5);
+	// Lab 2 memory management initialization functions
+	mem_init();
 
-	// Drop into the kernel monitor.
-	while (1)
-		monitor(NULL);
+	// Lab 3 user environment initialization functions
+	env_init();
+	trap_init();
+
+	// set up MSRs
+	extern void sysenter_handler();
+	wrmsr(0x174, GD_KT, 0);
+  wrmsr(0x175, KSTACKTOP, 0);
+	wrmsr(0x176, (uintptr_t)sysenter_handler, 0);
+
+#if defined(TEST)
+	// Don't touch -- used by grading script!
+	ENV_CREATE(TEST, ENV_TYPE_USER);
+#else
+	// Touch all you want.
+	ENV_CREATE(user_faultread, ENV_TYPE_USER);
+#endif // TEST*
+
+	// We only have one user environment for now, so just run it.
+	env_run(&envs[0]);
 }
 
 
@@ -53,7 +64,7 @@ i386_init(void)
  * Variable panicstr contains argument to first call to panic; used as flag
  * to indicate that the kernel has already called panic.
  */
-static const char *panicstr;
+const char *panicstr;
 
 /*
  * Panic is called on unresolvable fatal errors.

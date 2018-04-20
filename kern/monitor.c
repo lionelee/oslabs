@@ -12,6 +12,7 @@
 #include <kern/kdebug.h>
 #include <kern/trap.h>
 #include <kern/pmap.h>
+#include <kern/env.h>
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 #define uint64_t unsigned long long
@@ -31,7 +32,10 @@ static struct Command commands[] = {
 	{ "time", "Display running time (in clocks cycles) of the command", mon_time},
 	{ "showmappings", "Display the physical page mappings and corresponding permission bits", mon_showmappings},
 	{ "chperm", "Set, clear or change the permissions of any mapping", mon_chperm},
-	{ "dumpcont", "Dump the contents of a given virtual/physical address memory range", mon_dumpcont}
+	{ "dumpcont", "Dump the contents of a given virtual/physical address memory range", mon_dumpcont},
+	{ "c", "Continue execution from the current location", mon_continue },
+  { "si", "Execute the code instruction by instruction", mon_stepinto },
+  { "x", "Dispaly the memory", mon_display }
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -296,6 +300,55 @@ dcusage:
 		++cur_addr;
   }
   cprintf("\n");
+  return 0;
+}
+
+int
+mon_continue(int argc, char **argv, struct Trapframe *tf)
+{
+	if(argc > 1){
+		cprintf("Usage: c\n");
+		return 0;
+	}
+	tf->tf_eflags &= ~FL_TF;
+	env_run(curenv);
+  return 0;
+}
+
+int
+mon_stepinto(int argc, char **argv, struct Trapframe *tf)
+{
+	if(argc > 1){
+		cprintf("Usage: si\n");
+		return 0;
+	}
+  tf->tf_eflags |= FL_TF;
+  uint32_t eip = tf->tf_eip;
+  cprintf("tf_eip=%08x\n", eip);
+  struct Eipdebuginfo info;
+  debuginfo_eip(eip, &info);
+  cprintf("%s:%d: ", info.eip_file, info.eip_line);
+  for (int i = 0; i < info.eip_fn_namelen; ++i) {
+    cprintf("%c", info.eip_fn_name[i]);
+  }
+  cprintf("+%d\n", eip - (uint32_t)info.eip_fn_addr);
+	env_run(curenv);
+  return 0;
+}
+
+int
+mon_display(int argc, char **argv, struct Trapframe *tf)
+{
+	if(argc != 2){
+		cprintf("Usage: x [addr]\n");
+		return 0;
+	}
+	uint32_t addr = hex2int(argv[1]);
+	if(addr == -1){
+		cprintf("Error: invalid address\n");
+		return 0;
+	}
+  cprintf("%u\n", *(uint32_t*)addr);
   return 0;
 }
 
