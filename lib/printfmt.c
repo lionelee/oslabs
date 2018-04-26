@@ -26,6 +26,8 @@ static const char * const error_string[MAXERROR] =
 	[E_NO_MEM]	= "out of memory",
 	[E_NO_FREE_ENV]	= "out of environments",
 	[E_FAULT]	= "segmentation fault",
+	[E_IPC_NOT_RECV]= "env is not recving",
+	[E_EOF]		= "unexpected end of file",
 };
 
 /*
@@ -236,7 +238,6 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 
 		// (unsigned) octal
 		case 'o':
-			// Replace this with your code.
 			// display a number in octal form and the form should begin with '0'
 			putch('0', putdat);
 			num = getuint(&ap, lflag);
