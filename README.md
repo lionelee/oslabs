@@ -1,7 +1,7 @@
-# jos labs3
+# jos labs4
 
 *modified*  
-*inc: env.h, x86.h*  
-*kern: entry.S, env.h/.c, init.c, kdebug.c, monitor.h/.c, pmap.c, syscall.c, trap.c, trapentry.S*  
-*lib: libmain.c, syscall.c*  
-*user: evilhello2.c*
+*inc: lib.h, syscall.h, trap.h*  
+*kern: env.h/.c, init.c, mpentry.S, pmap.c, sched.c, spinlock.c, syscall.h/.c, trap.h/.c, trapentry.S*  
+*lib: fork.c, ipc.c, pfentry.S, pgfault.c, syscall.c*  
+*user: forktree.c, pingpongs.c*

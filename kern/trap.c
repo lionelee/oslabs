@@ -90,30 +90,71 @@ trap_init(void)
 	extern void th_mchk();
 	extern void th_simderr();
 	// LAB 3: Your code here.
-	SETGATE(idt[T_DIVIDE], 1, GD_KT, th_divide, 0);
-	SETGATE(idt[T_DEBUG], 1, GD_KT, th_debug, 0);
-	SETGATE(idt[T_NMI], 1, GD_KT, th_nmi, 0);
-	SETGATE(idt[T_BRKPT], 1, GD_KT, th_brkpt, 3);
-	SETGATE(idt[T_OFLOW], 1, GD_KT, th_oflow, 0);
-	SETGATE(idt[T_BOUND], 1, GD_KT, th_bound, 0);
-	SETGATE(idt[T_ILLOP], 1, GD_KT, th_illop, 0);
-	SETGATE(idt[T_DEVICE], 1, GD_KT, th_device, 0);
-	SETGATE(idt[T_DBLFLT], 1, GD_KT, th_dblflt, 0);
-	SETGATE(idt[T_TSS], 1, GD_KT, th_tss, 0);
-	SETGATE(idt[T_SEGNP], 1, GD_KT, th_segnp, 0);
-	SETGATE(idt[T_STACK], 1, GD_KT, th_stack, 0);
-	SETGATE(idt[T_GPFLT], 1, GD_KT, th_gpflt, 0);
-	SETGATE(idt[T_PGFLT], 1, GD_KT, th_pgflt, 0);
-	SETGATE(idt[T_FPERR], 1, GD_KT, th_fperr, 0);
-	SETGATE(idt[T_ALIGN], 1, GD_KT, th_align, 0);
-	SETGATE(idt[T_MCHK], 1, GD_KT, th_mchk, 0);
-	SETGATE(idt[T_SIMDERR], 1, GD_KT, th_simderr, 0);*/
+	SETGATE(idt[T_DIVIDE], 0, GD_KT, th_divide, 0);
+	SETGATE(idt[T_DEBUG], 0, GD_KT, th_debug, 0);
+	SETGATE(idt[T_NMI], 0, GD_KT, th_nmi, 0);
+	SETGATE(idt[T_BRKPT], 0, GD_KT, th_brkpt, 3);
+	SETGATE(idt[T_OFLOW], 0, GD_KT, th_oflow, 0);
+	SETGATE(idt[T_BOUND], 0, GD_KT, th_bound, 0);
+	SETGATE(idt[T_ILLOP], 0, GD_KT, th_illop, 0);
+	SETGATE(idt[T_DEVICE], 0, GD_KT, th_device, 0);
+	SETGATE(idt[T_DBLFLT], 0, GD_KT, th_dblflt, 0);
+	SETGATE(idt[T_TSS], 0, GD_KT, th_tss, 0);
+	SETGATE(idt[T_SEGNP], 0, GD_KT, th_segnp, 0);
+	SETGATE(idt[T_STACK], 0, GD_KT, th_stack, 0);
+	SETGATE(idt[T_GPFLT], 0, GD_KT, th_gpflt, 0);
+	SETGATE(idt[T_PGFLT], 0, GD_KT, th_pgflt, 0);
+	SETGATE(idt[T_FPERR], 0, GD_KT, th_fperr, 0);
+	SETGATE(idt[T_ALIGN], 0, GD_KT, th_align, 0);
+	SETGATE(idt[T_MCHK], 0, GD_KT, th_mchk, 0);
+	SETGATE(idt[T_SIMDERR], 0, GD_KT, th_simderr, 0);
+
+	extern void th_irq0();
+	extern void th_irq1();
+	extern void th_irq2();
+	extern void th_irq3();
+	extern void th_irq4();
+	extern void th_irq5();
+	extern void th_irq6();
+	extern void th_irq7();
+	extern void th_irq8();
+	extern void th_irq9();
+	extern void th_irq10();
+	extern void th_irq11();
+	extern void th_irq12();
+	extern void th_irq13();
+	extern void th_irq14();
+	extern void th_irq15();
+
+  SETGATE(idt[IRQ_OFFSET+0], 0, GD_KT, th_irq0, 0);
+	SETGATE(idt[IRQ_OFFSET+1], 0, GD_KT, th_irq1, 0);
+	SETGATE(idt[IRQ_OFFSET+2], 0, GD_KT, th_irq2, 0);
+	SETGATE(idt[IRQ_OFFSET+3], 0, GD_KT, th_irq3, 0);
+	SETGATE(idt[IRQ_OFFSET+4], 0, GD_KT, th_irq4, 0);
+	SETGATE(idt[IRQ_OFFSET+5], 0, GD_KT, th_irq5, 0);
+	SETGATE(idt[IRQ_OFFSET+6], 0, GD_KT, th_irq6, 0);
+	SETGATE(idt[IRQ_OFFSET+7], 0, GD_KT, th_irq7, 0);
+	SETGATE(idt[IRQ_OFFSET+8], 0, GD_KT, th_irq8, 0);
+	SETGATE(idt[IRQ_OFFSET+9], 0, GD_KT, th_irq9, 0);
+	SETGATE(idt[IRQ_OFFSET+10], 0, GD_KT, th_irq10, 0);
+	SETGATE(idt[IRQ_OFFSET+11], 0, GD_KT, th_irq11, 0);
+	SETGATE(idt[IRQ_OFFSET+12], 0, GD_KT, th_irq12, 0);
+	SETGATE(idt[IRQ_OFFSET+13], 0, GD_KT, th_irq13, 0);
+	SETGATE(idt[IRQ_OFFSET+14], 0, GD_KT, th_irq14, 0);
+	SETGATE(idt[IRQ_OFFSET+15], 0, GD_KT, th_irq15, 0);*/
+
 	extern int vectors[];
 	for(int i = 0; i < 20; ++i){
 		if(i != 9 && i != 15 && i != 3)
-			SETGATE(idt[i], 1, GD_KT, vectors[i], 0);
+			SETGATE(idt[i], 0, GD_KT, vectors[i], 0);
 	}
-	SETGATE(idt[3], 1, GD_KT, vectors[3], 3);
+	SETGATE(idt[3], 0, GD_KT, vectors[3], 3);
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, vectors[20], 3);
+
+	for(int j = 0; j < 16; ++j){
+		SETGATE(idt[IRQ_OFFSET+j], 0, GD_KT, vectors[j+21], 0);
+	}
+
 
 	// Per-CPU setup
 	trap_init_percpu();
@@ -148,17 +189,24 @@ trap_init_percpu(void)
 
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
-	ts.ts_esp0 = KSTACKTOP;
-	ts.ts_ss0 = GD_KD;
+	thiscpu->cpu_ts.ts_esp0 = KSTACKTOP - thiscpu->cpu_id * (KSTKSIZE + KSTKGAP);
+	thiscpu->cpu_ts.ts_ss0 = GD_KD;
+
+	// set up MSRs
+	extern void sysenter_handler();
+	wrmsr(0x174, GD_KT, 0);
+  wrmsr(0x175, thiscpu->cpu_ts.ts_esp0, 0);
+	wrmsr(0x176, (uintptr_t)sysenter_handler, 0);
 
 	// Initialize the TSS slot of the gdt.
-	gdt[GD_TSS0 >> 3] = SEG16(STS_T32A, (uint32_t) (&ts),
+	uint32_t i = thiscpu->cpu_id;
+	gdt[(GD_TSS0 >> 3) + i] = SEG16(STS_T32A, (uint32_t) (&thiscpu->cpu_ts),
 					sizeof(struct Taskstate), 0);
-	gdt[GD_TSS0 >> 3].sd_s = 0;
+	gdt[(GD_TSS0 >> 3) + i].sd_s = 0;
 
 	// Load the TSS selector (like other segment selectors, the
 	// bottom three bits are special; we leave them 0)
-	ltr(GD_TSS0);
+	ltr(GD_TSS0 + (i << 3));
 
 	// Load the IDT
 	lidt(&idt_pd);
@@ -236,6 +284,13 @@ trap_dispatch(struct Trapframe *tf)
 		case T_BRKPT: case T_DEBUG:
 			monitor(tf);
 			return;
+		case T_SYSCALL:
+			syscall_handler(tf);
+			return;
+		case IRQ_OFFSET+IRQ_TIMER:
+			lapic_eoi();
+			sched_yield();
+			return;
 		default: break;
 	}
 
@@ -271,6 +326,7 @@ trap(struct Trapframe *tf)
 		// Acquire the big kernel lock before doing any
 		// serious kernel work.
 		// LAB 4: Your code here.
+		lock_kernel();
 		assert(curenv);
 
 		// Garbage collect if current enviroment is a zombie
@@ -352,9 +408,35 @@ page_fault_handler(struct Trapframe *tf)
 
 	// LAB 4: Your code here.
 
+	if (curenv->env_pgfault_upcall != NULL) {
+    struct UTrapframe *utf = NULL;
+		size_t utfsize = sizeof(struct UTrapframe);
+    if (tf->tf_esp >= UXSTACKTOP - PGSIZE && tf->tf_esp < UXSTACKTOP)
+      utf = (struct UTrapframe *)(tf->tf_esp - utfsize - 4);
+    else
+      utf = (struct UTrapframe *)(UXSTACKTOP - utfsize);
+    user_mem_assert(curenv, utf, utfsize, PTE_W);
+    utf->utf_fault_va = fault_va;
+    utf->utf_err = tf->tf_err;
+    utf->utf_regs = tf->tf_regs;
+    utf->utf_eip = tf->tf_eip;
+    utf->utf_eflags = tf->tf_eflags;
+    utf->utf_esp = tf->tf_esp;
+    tf->tf_eip = (uint32_t)curenv->env_pgfault_upcall;
+    tf->tf_esp = (uint32_t)utf;
+    env_run(curenv);
+  }
+
 	// Destroy the environment that caused the fault.
 	cprintf("[%08x] user fault va %08x ip %08x\n",
 		curenv->env_id, fault_va, tf->tf_eip);
 	print_trapframe(tf);
 	env_destroy(curenv);
+}
+
+void
+syscall_handler(struct Trapframe *tf) {
+  tf->tf_regs.reg_eax = syscall(tf->tf_regs.reg_eax, tf->tf_regs.reg_ebx,
+                                tf->tf_regs.reg_ecx, tf->tf_regs.reg_edx,
+                                tf->tf_regs.reg_esi, tf->tf_regs.reg_edi);
 }
