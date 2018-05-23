@@ -1,7 +1,8 @@
-# jos labs4
+# jos labs5
 
 *modified*  
-*inc: lib.h, syscall.h, trap.h*  
-*kern: env.h/.c, init.c, mpentry.S, pmap.c, sched.c, spinlock.c, syscall.h/.c, trap.h/.c, trapentry.S*  
-*lib: fork.c, ipc.c, pfentry.S, pgfault.c, syscall.c*  
-*user: forktree.c, pingpongs.c*
+*inc: syscall.h*  
+*fs: bc.c, fs.c, serv.c*  
+*kern: init.c, syscall.h/.c*  
+*lib: file.c, spawn.c, syscall.c*  
+*user: spawn.c*

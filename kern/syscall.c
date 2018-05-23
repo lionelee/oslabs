@@ -134,6 +134,54 @@ sys_env_set_status(envid_t envid, int status)
   return 0;
 }
 
+// Set envid's trap frame to 'tf'.
+// tf is modified to make sure that user environments always run at code
+// protection level 3 (CPL 3) with interrupts enabled.
+//
+// Returns 0 on success, < 0 on error.  Errors are:
+//	-E_BAD_ENV if environment envid doesn't currently exist,
+//		or the caller doesn't have permission to change envid.
+static int
+sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
+{
+	// LAB 5: Your code here.
+	// Remember to check whether the user has supplied us with a good
+	// address!
+
+	struct Env *e = NULL;
+  int r = envid2env(envid, &e, 1);
+  if (r < 0) return r;
+
+	e->env_tf = *tf;
+	e->env_tf.tf_ds = GD_UD | 3;
+	e->env_tf.tf_es = GD_UD | 3;
+	e->env_tf.tf_ss = GD_UD | 3;
+	e->env_tf.tf_cs = GD_UT | 3;
+
+	e->env_tf.tf_eflags |= FL_IF;
+	return 0;
+}
+
+// Run the env whose id is envid
+static int
+sys_env_run(envid_t envid, struct Trapframe *tf)
+{
+	struct Env *e = NULL;
+	int r = envid2env(envid, &e, 1);
+	if (r < 0) return r;
+
+	curenv->env_tf = *tf;
+	pte_t * tmp_pgdir = e->env_pgdir;
+	e->env_pgdir = curenv->env_pgdir;
+  curenv->env_pgdir = tmp_pgdir;
+
+	env_free(e);
+  lcr3(PADDR(curenv->env_pgdir));
+	unlock_kernel();
+  env_pop_tf(&curenv->env_tf);
+	return 0;
+}
+
 // Set the page fault upcall for 'envid' by modifying the corresponding struct
 // Env's 'env_pgfault_upcall' field.  When 'envid' causes a page fault, the
 // kernel will push a fault record onto the exception stack, then branch to
@@ -405,13 +453,12 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
       ret = sys_env_destroy(a1);
 			break;
     case SYS_map_kernel_page:
-      ret = sys_map_kernel_page((void *)a1, (void *)a2);
+      ret = sys_map_kernel_page((void*)a1, (void*)a2);
 			break;
     case SYS_sbrk:
       ret = sys_sbrk(a1);
 			break;
 		case SYS_yield:
-    	//curenv->env_tf.tf_regs.reg_eax = 0;
 			sys_yield();
 			break;
 		case SYS_exofork:
@@ -420,6 +467,12 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	  case SYS_env_set_status:
 	    ret = sys_env_set_status(a1, a2);
 	    break;
+		case SYS_env_set_trapframe:
+			ret = sys_env_set_trapframe(a1, (struct Trapframe*)a2);
+			break;
+		case SYS_env_run:
+			ret = sys_env_run(a1, (struct Trapframe*)a2);
+			break;
 	  case SYS_page_alloc:
 	    ret = sys_page_alloc(a1, (void *)a2, a3);
 	    break;
