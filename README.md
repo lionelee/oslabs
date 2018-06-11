@@ -1,5 +1,5 @@
 # oslabs
-😃
+**premature optimization is the root of all evil** 😃
 
 |LabNum                                                        |Topic                     |
 |--------------------------------------------------------------|--------------------------|
