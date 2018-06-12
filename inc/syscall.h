@@ -23,6 +23,12 @@ enum {
 	SYS_ipc_recv,
 
 	SYS_sbrk,
+	SYS_time_msec,
+
+	SYS_net_try_transmit,
+	SYS_net_receive,
+	SYS_net_mac,
+
 	NSYSCALLS
 };
 

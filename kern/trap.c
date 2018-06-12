@@ -14,6 +14,7 @@
 #include <kern/picirq.h>
 #include <kern/cpu.h>
 #include <kern/spinlock.h>
+#include <kern/time.h>
 
 static struct Taskstate ts;
 
@@ -251,7 +252,7 @@ print_regs(struct PushRegs *regs)
 	cprintf("  edi  0x%08x\n", regs->reg_edi);
 	cprintf("  esi  0x%08x\n", regs->reg_esi);
 	cprintf("  ebp  0x%08x\n", regs->reg_ebp);
-	cprintf("  oesp 0x%08x\n", regs->reg_oesp);
+	cprintf("  esp 0x%08x\n", regs->reg_oesp);
 	cprintf("  ebx  0x%08x\n", regs->reg_ebx);
 	cprintf("  edx  0x%08x\n", regs->reg_edx);
 	cprintf("  ecx  0x%08x\n", regs->reg_ecx);
@@ -277,6 +278,11 @@ trap_dispatch(struct Trapframe *tf)
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
 
+	// Add time tick increment to clock interrupts.
+	// Be careful! In multiprocessors, clock interrupts are
+	// triggered on every CPU.
+	// LAB 6: Your code here.
+
 	switch (tf->tf_trapno) {
 		case T_PGFLT:
       page_fault_handler(tf);
@@ -288,12 +294,12 @@ trap_dispatch(struct Trapframe *tf)
 			syscall_handler(tf);
 			return;
 		case IRQ_OFFSET+IRQ_TIMER:
+			time_tick();
 			lapic_eoi();
 			sched_yield();
 			return;
 		default: break;
 	}
-
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)

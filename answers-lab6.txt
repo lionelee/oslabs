@@ -1,0 +1,10 @@
+###Question
+
+1.使用全局的变量struct tx_desc tx_queue和struct tx_pkt  tx_pkt_buf存放transmit descriptor及其对应的packet，E1000_TDH和E1000_TDT寄存器中保存的index来操作tx_queue，根据手册更新寄存器记忆当前struct tx_desc的属性。当 transmit ring满的时候，返回-E_TXQ_FULL给caller function(End-to-End Arguments)，由caller决定是否重试。
+
+2.与transmit的实现类似，使用全局的变量struct rcv_desc rcv_queue和struct rcv_pkt  rcv_pkt_buf存放receive descriptor及其对应的packet，当 receive queue空的时候，返回-E_RCVQ_EMPTY给caller，由其决定是否重试。
+
+3.This file came from JOS.
+	Cheesy web page!
+
+4.It took about three days.

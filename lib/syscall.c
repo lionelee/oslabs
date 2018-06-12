@@ -152,3 +152,27 @@ sys_sbrk(uint32_t inc)
 {
 	return syscall(SYS_sbrk, 0, (uint32_t)inc, (uint32_t)0, 0, 0, 0);
 }
+
+unsigned int
+sys_time_msec(void)
+{
+	return (unsigned int) syscall(SYS_time_msec, 0, 0, 0, 0, 0, 0);
+}
+
+int
+sys_net_try_transmit(const char* data, uint32_t len)
+{
+  return syscall(SYS_net_try_transmit, 0, (uint32_t)data, len, 0, 0, 0);
+}
+
+int
+sys_net_receive(char* data)
+{
+  return syscall(SYS_net_receive, 0, (uint32_t)data, 0, 0, 0, 0);
+}
+
+int
+sys_net_mac(uint8_t* mac)
+{
+  return syscall(SYS_net_mac, 0, (uint32_t)mac, 0, 0, 0, 0);
+}

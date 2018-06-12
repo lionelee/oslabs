@@ -12,6 +12,8 @@
 #include <kern/console.h>
 #include <kern/sched.h>
 #include <kern/spinlock.h>
+#include <kern/time.h>
+#include <kern/e1000.h>
 
 // Print a string to the system console.
 // The string is exactly 'len' characters long.
@@ -430,6 +432,37 @@ sys_sbrk(uint32_t inc)
   return curenv->env_break;
 }
 
+// Return the current time.
+static int
+sys_time_msec(void)
+{
+	// LAB 6: Your code here.
+	return time_msec();
+}
+
+// Transmit package
+static int
+sys_net_try_transmit(const char* data, uint32_t len)
+{
+  return e1000_transmit(data, len);
+}
+
+// Receive package
+static int
+sys_net_receive(char* data)
+{
+  return e1000_receive(data);
+}
+
+// Get MAC
+static int
+sys_net_mac(uint8_t* mac)
+{
+	memmove(mac, e1000_mac, 6);
+  return 0;
+}
+
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -490,6 +523,19 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	    break;
 	  case SYS_ipc_recv:
 	    ret = sys_ipc_recv((void *)a1); /* no return */
+			break;
+		case SYS_time_msec:
+      ret = sys_time_msec();
+      break;
+		case SYS_net_try_transmit:
+	    ret = sys_net_try_transmit((char *)a1, a2);
+	    break;
+	  case SYS_net_receive:
+	    ret = sys_net_receive((char *)a1);
+	    break;
+	  case SYS_net_mac:
+	    ret = sys_net_mac((uint8_t *)a1);
+	    break;
 		default:
 			ret = -E_INVAL;
   }

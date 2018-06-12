@@ -1,8 +1,8 @@
-# jos labs5
+# jos labs6
 
 *modified*  
-*inc: syscall.h*  
-*fs: bc.c, fs.c, serv.c*  
-*kern: init.c, syscall.h/.c*  
-*lib: file.c, spawn.c, syscall.c*  
-*user: spawn.c*
+*inc: syscall.h, lib.h, error.h*  
+*net: input.c, output.c, jif.c*  
+*kern: e1000.h/.c, syscall.c*  
+*lib: syscall.h/.c*  
+*user: httpd.c*

@@ -17,4 +17,5 @@ V = @
 # If the makefile cannot find your QEMU binary, uncomment the
 # following line and set it to the full path to QEMU.
 #
-QEMU=/usr/local/bin/qemu-system-i386
+QEMU=/home/lionel/qemu-1.7.0/dist/bin/qemu-system-i386
+#/usr/local/bin/qemu-system-i386

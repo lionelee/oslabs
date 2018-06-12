@@ -87,5 +87,6 @@ page2kva(struct Page *pp)
 }
 
 pte_t *pgdir_walk(pde_t *pgdir, const void *va, int create);
+void boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm);
 
 #endif /* !JOS_KERN_PMAP_H */
